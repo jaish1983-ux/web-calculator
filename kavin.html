@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Arithmetic Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+        }
+        
+        /* 3D Button Effect */
+        .btn-press {
+            transition: all 0.1s;
+            box-shadow: 0px 4px 0px 0px #333; /* Shadow matches background slightly darker */
+            transform: translateY(0);
+        }
+        
+        .btn-press:active {
+            transform: translateY(4px);
+            box-shadow: 0px 0px 0px 0px #333;
+        }
+
+        .btn-dark {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            box-shadow: 0px 4px 0px 0px #1a1a1a;
+        }
+        .btn-dark:active {
+            box-shadow: 0px 0px 0px 0px #1a1a1a;
+        }
+
+        .btn-orange {
+            background-color: #ff9f0a;
+            color: #ffffff;
+            box-shadow: 0px 4px 0px 0px #cc7a00;
+        }
+        .btn-orange:active {
+            box-shadow: 0px 0px 0px 0px #cc7a00;
+        }
+
+        .btn-grey {
+            background-color: #a5a5a5;
+            color: #000000;
+            box-shadow: 0px 4px 0px 0px #757575;
+        }
+        .btn-grey:active {
+            box-shadow: 0px 0px 0px 0px #757575;
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Calculator Container -->
+    <div class="bg-[#121212] w-full max-w-xs rounded-[40px] p-6 shadow-2xl border-[8px] border-[#333]">
+        
+        <!-- Display Screen -->
+        <div class="bg-[#000] w-full h-32 rounded-[20px] mb-6 flex flex-col items-end justify-end p-4 overflow-hidden relative">
+            <div id="previous-display" class="text-gray-400 text-2xl h-8 font-light"></div>
+            <div id="current-display" class="text-white text-5xl font-medium">0</div>
+        </div>
+
+        <!-- Keypad Grid -->
+        <div class="grid grid-cols-4 gap-4">
+            
+            <!-- Row 1 -->
+            <button class="btn-press btn-grey rounded-full h-16 w-16 text-xl font-medium mx-auto" onclick="clearDisplay()">AC</button>
+            <button class="btn-press btn-grey rounded-full h-16 w-16 text-xl font-medium mx-auto" onclick="deleteNumber()">DEL</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="chooseOperation('%')">%</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="chooseOperation('÷')">÷</button>
+
+            <!-- Row 2 -->
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('7')">7</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('8')">8</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('9')">9</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="chooseOperation('×')">×</button>
+
+            <!-- Row 3 -->
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('4')">4</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('5')">5</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('6')">6</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="chooseOperation('-')">−</button>
+
+            <!-- Row 4 -->
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('1')">1</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('2')">2</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('3')">3</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="chooseOperation('+')">+</button>
+
+            <!-- Row 5 -->
+            <button class="btn-press btn-dark btn-zero rounded-full h-16 text-left pl-8 pr-0 text-2xl font-medium" onclick="appendNumber('0')">0</button>
+            <button class="btn-press btn-dark rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="appendNumber('.')">.</button>
+            <button class="btn-press btn-orange rounded-full h-16 w-16 text-2xl font-medium mx-auto" onclick="compute()">=</button>
+
+        </div>
+    </div>
+
+    <script>
+        class Calculator {
+            constructor(previousOperandTextElement, currentOperandTextElement) {
+                this.previousOperandTextElement = previousOperandTextElement;
+                this.currentOperandTextElement = currentOperandTextElement;
+                this.clear();
+            }
+
+            clear() {
+                this.currentOperand = '';
+                this.previousOperand = '';
+                this.operation = undefined;
+            }
+
+            delete() {
+                this.currentOperand = this.currentOperand.toString().slice(0, -1);
+            }
+
+            appendNumber(number) {
+                if (number === '.' && this.currentOperand.includes('.')) return;
+                this.currentOperand = this.currentOperand.toString() + number.toString();
+            }
+
+            chooseOperation(operation) {
+                if (this.currentOperand === '') return;
+                if (this.previousOperand !== '') {
+                    this.compute();
+                }
+                this.operation = operation;
+                this.previousOperand = this.currentOperand;
+                this.currentOperand = '';
+            }
+
+            compute() {
+                let computation;
+                const prev = parseFloat(this.previousOperand);
+                const current = parseFloat(this.currentOperand);
+                
+                if (isNaN(prev) || isNaN(current)) return;
+                
+                switch (this.operation) {
+                    case '+':
+                        computation = prev + current;
+                        break;
+                    case '-':
+                        computation = prev - current;
+                        break;
+                    case '×':
+                        computation = prev * current;
+                        break;
+                    case '÷':
+                        if (current === 0) {
+                            alert("Cannot divide by zero!");
+                            this.clear();
+                            return;
+                        }
+                        computation = prev / current;
+                        break;
+                    case '%':
+                        computation = prev % current;
+                        break;
+                    default:
+                        return;
+                }
+                
+                this.currentOperand = computation;
+                this.operation = undefined;
+                this.previousOperand = '';
+            }
+
+            getDisplayNumber(number) {
+                const stringNumber = number.toString();
+                const integerDigits = parseFloat(stringNumber.split('.')[0]);
+                const decimalDigits = stringNumber.split('.')[1];
+                let integerDisplay;
+                if (isNaN(integerDigits)) {
+                    integerDisplay = '';
+                } else {
+                    integerDisplay = integerDigits.toLocaleString('en', { maximumFractionDigits: 0 });
+                }
+                if (decimalDigits != null) {
+                    return `${integerDisplay}.${decimalDigits}`;
+                } else {
+                    return integerDisplay;
+                }
+            }
+
+            updateDisplay() {
+                if (this.currentOperand === '') {
+                    this.currentOperandTextElement.innerText = '0';
+                } else {
+                    this.currentOperandTextElement.innerText = this.getDisplayNumber(this.currentOperand);
+                }
+                
+                if (this.operation != null) {
+                    this.previousOperandTextElement.innerText = 
+                        `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`;
+                } else {
+                    this.previousOperandTextElement.innerText = '';
+                }
+            }
+        }
+
+        const previousOperandTextElement = document.getElementById('previous-display');
+        const currentOperandTextElement = document.getElementById('current-display');
+        const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement);
+
+        function appendNumber(number) {
+            calculator.appendNumber(number);
+            calculator.updateDisplay();
+        }
+
+        function chooseOperation(operation) {
+            calculator.chooseOperation(operation);
+            calculator.updateDisplay();
+        }
+
+        function compute() {
+            calculator.compute();
+            calculator.updateDisplay();
+        }
+
+        function clearDisplay() {
+            calculator.clear();
+            calculator.updateDisplay();
+        }
+
+        function deleteNumber() {
+            calculator.delete();
+            calculator.updateDisplay();
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (e) => {
+            if ((e.key >= 0 && e.key <= 9) || e.key === '.') appendNumber(e.key);
+            if (e.key === '=' || e.key === 'Enter') compute();
+            if (e.key === 'Backspace') deleteNumber();
+            if (e.key === 'Escape') clearDisplay();
+            if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+                let op = e.key;
+                if(op === '*') op = '×';
+                if(op === '/') op = '÷';
+                chooseOperation(op);
+            }
+        });
+    </script>
+</body>
+</html>
